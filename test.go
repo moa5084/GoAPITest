@@ -1,5 +1,9 @@
 package main
 
+/*
+	Go で Yahoo! 気象情報API を引いてみた
+*/
+
 import (
 	"encoding/xml"
 	"fmt"
@@ -46,20 +50,13 @@ type Weather struct {
 	Rainfall string `xml:"Rainfall"`
 }
 
-// レスポンスJSONを表現する構造体色々
-type Result struct {
-	Name        string `json:"Feature.Name"`
-	CountryName string `json:"Feature.Property.Country.Name"`
-	Address     string `json:"Feature.Property.Address"`
-}
-
 func main() {
 	// リクエストパラメータの設定
 	q_appid := Param{"appid", APPID}
 	q_query := Param{"coordinates", "35.680029,139.737236"}
 	q_output := Param{"output", "xml"}
-	//q_output := Param{"output", "json"}
 	p := []Param{q_appid, q_query, q_output}
+
 	// http Request を作成
 	req, errReq := http.NewRequest("GET", URL+"?"+createQuery(p), nil)
 
@@ -81,11 +78,6 @@ func main() {
 	byteArray, errRead := ioutil.ReadAll(resp.Body)
 	if errRead == nil {
 		// とりあえずフォーマットせずに出力
-		/*
-			var out bytes.Buffer
-			json.Indent(&out, byteArray, "", "\t")
-			out.WriteTo(os.Stdout)
-		*/
 		fmt.Println(string(byteArray))
 
 		// XMLのデコード
@@ -93,17 +85,8 @@ func main() {
 		if err := xml.Unmarshal(byteArray, resultXML); err != nil {
 			// todo
 		}
-		// fmt.Printf("Name:\t%s\nCountry:\t%s\nAddress:\t%s", resultXML.Name, resultXML.CountryName, resultXML.Address)
+
 		fmt.Printf("Geometry:\t%s\nType:\t%s\nDate:\t%s\nRainfall:\t%s mm/h\n", resultXML.Features[0].Geometry.Coordinates, resultXML.Features[0].Property.WeatherList.Weathers[0].Type, resultXML.Features[0].Property.WeatherList.Weathers[0].Date, resultXML.Features[0].Property.WeatherList.Weathers[0].Rainfall)
-		// JSON のデコード（文字コードが違う？）
-		/*
-			var results Result
-			if err := json.Unmarshal(byteArray, results); err != nil {
-				// todo
-			}
-			fmt.Println(results)
-			fmt.Printf("Name:\t%s\nCountry:\t%s\nAddress:\t%s", results.Name, results.CountryName, results.Address)
-		*/
 	}
 }
 
